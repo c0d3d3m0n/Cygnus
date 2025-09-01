@@ -5,6 +5,8 @@
 
 import subprocess
 import json
+import os
+import tempfile
 from core.models import Scan, Target
 from celery import shared_task
 
@@ -92,6 +94,22 @@ def amass_scan(target_id):
     except FileNotFoundError:
         file_output = "Amass output file not found."
 
+    # Store the scan result in the database
+    scan = Scan.objects.create(
+        target=target,
+        scan_type="amass",
+        command=" ".join(command),
+        result=file_output,
+        status="success" if "Error" not in output else "failed"
+    )
+    scan.save()
+    return f"Amass scan completed for {target.domain}."
+
+
+
+def get_temp_path(filename):
+    return os.path.join(tempfile.gettempdir(), filename)
+
 @shared_task
 def httpx_scan(target_id):
     # Runs an httpx scan on the given target and stores the result.
@@ -101,20 +119,21 @@ def httpx_scan(target_id):
     except Target.DoesNotExist:
         return f"Target with ID {target_id} does not exist."
 
+    input_file = get_temp_path(f"{target.domain}_amass.txt")
+    output_file = get_temp_path(f"{target.domain}_alive.txt")
     command = [
-    "httpx",
-    "-l", f"/tmp/{target.domain}_amass.txt",   # input file (list of subdomains)
-    "-o", f"/tmp/{target.domain}_alive.txt",   # output file with live subdomains
-    "-silent",                                 # cleaner output (no banner, progress)
-    "-status-code",                            # include HTTP status code
-    "-title",                                  # grab page title
-    "-tech-detect"                             # detect technologies (like Wappalyzer)
-]
+        "httpx",
+        "-l", input_file,
+        "-o", output_file,
+        "-silent",
+        "-status-code",
+        "-title",
+        "-tech-detect"
+    ]
     output = run_command(command)
 
-    # Read the output file if it was created
     try:
-        with open(f"/tmp/{target.domain}_httpx.txt", "r") as f:
+        with open(output_file, "r") as f:
             file_output = f.read()
     except FileNotFoundError:
         file_output = "httpx output file not found."
@@ -169,3 +188,5 @@ def httpx_tech_detection_scan(target_id):
     scan.save()
 
     return f"httpx-toolkit technology detection completed for {target.domain}."
+
+
