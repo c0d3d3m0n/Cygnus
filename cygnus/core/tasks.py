@@ -7,6 +7,7 @@ import subprocess
 import json
 import os
 import tempfile
+import whois
 from core.models import Scan, Target
 from celery import shared_task
 
@@ -188,5 +189,30 @@ def httpx_tech_detection_scan(target_id):
     scan.save()
 
     return f"httpx-toolkit technology detection completed for {target.domain}."
+
+@shared_task
+def passive_whois_scan(target_id):
+    try:
+        target = Target.objects.get(id=target_id)
+    except Target.DoesNotExist:
+        return f"Target with ID {target_id} does not exist."
+
+    try:
+        whois_info = whois.whois(target.domain)
+        result = str(whois_info)
+        status = "success"
+    except Exception as e:
+        result = f"WHOIS lookup failed: {str(e)}"
+        status = "failed"
+
+    scan = Scan.objects.create(
+        target=target,
+        scan_type="passive-whois",
+        command=f"whois {target.domain}",
+        result=result,
+        status=status
+    )
+    scan.save()
+    return f"Passive WHOIS scan completed for {target.domain}."
 
 

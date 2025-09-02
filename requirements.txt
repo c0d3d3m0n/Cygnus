@@ -16,3 +16,7 @@ python-dotenv==1.0.0
 
 # For making HTTP requests in your tasks (optional but useful)
 requests==2.31.0
+
+python-whois
+beautifulsoup4
+requests
