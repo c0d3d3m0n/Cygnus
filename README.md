@@ -1,13 +1,146 @@
-Cygnus - A Web Reconnaissance FrameworkStatus: 🚧 Under Development 🚧Cygnus is a powerful and intuitive web application framework designed to streamline and automate the process of web reconnaissance. It provides a comprehensive suite of tools for both active and passive information gathering, all accessible through a clean, modern web interface. This project aims to centralize common recon tasks, making it an essential tool for security professionals, penetration testers, and bug bounty hunters.📋 Table of ContentsAbout The ProjectKey FeaturesTech StackGetting StartedPrerequisitesInstallationUsageRoadmapContributingLicense📖 About The ProjectIn the initial phase of any security assessment, reconnaissance is critical. Gathering information about a target can be a time-consuming process, often involving multiple disparate tools. Cygnus was created to solve this problem by integrating a variety of recon tasks into a single, cohesive platform. By leveraging a robust backend and a reactive frontend, Cygnus allows users to manage, execute, and review reconnaissance scans efficiently.The asynchronous task management system ensures that even long-running scans (like directory bruteforcing or extensive port scanning) can be performed without blocking the user interface, providing a seamless and responsive user experience.✨ Key FeaturesCygnus is being built with a range of features to cover the reconnaissance lifecycle:Passive ReconnaissanceWHOIS Lookup: Retrieve registration data for a domain.DNS Lookup: Query various DNS records (A, MX, TXT, etc.).Certificate Lookup: Inspect SSL/TLS certificate details and transparency logs.Shodan Enumeration: Integrate with the Shodan API to find exposed devices and services.Active ReconnaissancePort Scanning: Identify open ports on a target host.Directory Bruteforcing: Discover hidden files and directories on a web server.Subdomain Finding: Enumerate subdomains associated with a target domain.🛠️ Tech StackCygnus is built with a modern and scalable technology stack:Backend: Django & Django REST FrameworkFrontend: React.jsDatabase: PostgreSQLAsynchronous Tasks: CeleryMessage Broker: Redis🚀 Getting StartedFollow these instructions to get a local copy of Cygnus up and running for development and testing purposes.PrerequisitesYou will need the following installed on your system:Python 3.8+Node.js & npmPostgreSQLRedisInstallationClone the repository:git clone [https://github.com/your-username/cygnus.git](https://github.com/your-username/cygnus.git)
+# Cygnus - A Web Reconnaissance Framework
+
+🚧 **Status:** Under Development 🚧  
+
+Cygnus is a powerful and intuitive web application framework designed to streamline and automate the process of **web reconnaissance**. It provides a comprehensive suite of tools for both **active** and **passive** information gathering, all accessible through a clean, modern web interface.  
+
+This project aims to centralize common recon tasks, making it an essential tool for **security professionals, penetration testers, and bug bounty hunters**.  
+
+---
+
+## 📋 Table of Contents
+- [About The Project](#-about-the-project)
+- [Key Features](#-key-features)
+- [Tech Stack](#️-tech-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Usage](#-usage)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 📖 About The Project
+In the initial phase of any security assessment, reconnaissance is critical. Gathering information about a target can be a **time-consuming process**, often involving multiple disparate tools.  
+
+**Cygnus** was created to solve this problem by integrating a variety of recon tasks into a **single, cohesive platform**.  
+
+Key highlights:
+- **Robust backend** with asynchronous task handling.  
+- **Reactive frontend** for a smooth user experience.  
+- **Seamless task management**, ensuring long-running scans (e.g., directory bruteforcing, port scanning) don’t block the UI.  
+
+---
+
+## ✨ Key Features
+
+### Passive Reconnaissance
+- **WHOIS Lookup** → Retrieve domain registration data.  
+- **DNS Lookup** → Query A, MX, TXT, and other DNS records.  
+- **Certificate Lookup** → Inspect SSL/TLS certificates and transparency logs.  
+- **Shodan Enumeration** → Integrate with Shodan API for exposed devices & services.  
+
+### Active Reconnaissance
+- **Port Scanning** → Identify open ports on target hosts.  
+- **Directory Bruteforcing** → Discover hidden files & directories.  
+- **Subdomain Finding** → Enumerate subdomains of a target domain.  
+
+---
+
+## 🛠️ Tech Stack
+- **Backend:** Django, Django REST Framework  
+- **Frontend:** React.js  
+- **Database:** PostgreSQL  
+- **Asynchronous Tasks:** Celery  
+- **Message Broker:** Redis  
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to set up a local development environment.  
+
+### Prerequisites
+Ensure you have installed:
+- Python **3.8+**  
+- Node.js & npm  
+- PostgreSQL  
+- Redis  
+
+### Installation
+Clone the repository:
+```bash
+git clone https://github.com/your-username/cygnus.git
 cd cygnus
-Backend Setup:Create and activate a virtual environment:python -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-Install Python dependencies:pip install -r requirements.txt
-Set up your .env file for database credentials and other settings (copy from .env.example).Run database migrations:python manage.py migrate
-Frontend Setup:Navigate to the frontend directory:cd frontend
-Install Node.js dependencies:npm install
-Run the Application:Start the Backend Server:python manage.py runserver
-Start the Frontend Development Server: (in the frontend directory)npm start
-Start Redis and Celery: (in separate terminals)redis-server
-celery -A cygnus_project worker -l info
-🖥️ UsageOnce the application is running, open your web browser and navigate to http://localhost:3000. From the dashboard, you can select a target and choose which reconnaissance tasks you want to perform. The results will be displayed in real-time as the tasks complete.(More detailed usage instructions and screenshots will be added as the project matures.)🗺️ Roadmap[ ] Implement user authentication and multi-user support.[ ] Develop a project/target management system.[ ] Add reporting and data export features (PDF, CSV).[ ] Integrate more third-party APIs (e.g., VirusTotal, Hunter.io).[ ] Enhance visual data representation with charts and graphs.[ ] Dockerize the entire application for easier deployment.See the open issues for a full list of proposed features and known bugs.🙌 ContributingContributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.Fork the ProjectCreate your Feature Branch (git checkout -b feature/AmazingFeature)Commit your Changes (git commit -m 'Add some AmazingFeature')Push to the Branch (git push origin feature/AmazingFeature)Open a Pull Request📄 LicenseDistributed under the MIT License. See LICENSE for more information.
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+
+# Run migrations
+python manage.py migrate
+
+# frontend
+cd frontend
+npm install
+
+# Backend
+python manage.py runserver
+
+# Frontend
+cd frontend
+npm start
+
+# Redis
+redis-server
+
+# Celery worker
+celery -A cygnus worker -l info
+```
+
+🖥️ Usage
+
+Once running, open your browser at http://localhost:3000
+From the dashboard you can:
+Select a target.
+Launch active/passive reconnaissance tasks.
+View results in real-time as scans complete.
+(Detailed usage instructions & screenshots will be added as the project matures.)
+
+🗺️ Roadmap
+ Implement user authentication & multi-user support.
+ Add project/target management system.
+ Generate reports (PDF, CSV).
+ Integrate APIs like VirusTotal, Hunter.io.
+ Visual dashboards with charts & graphs.
+ Dockerize for streamlined deployment.
+
+👉 See open issues
+ for full list of proposed features & bugs.
+
+🙌 Contributing
+Contributions make the community amazing! Any help is greatly appreciated.
+Fork the repo
+
+Create a feature branch
+``` bash
+Create a feature branch
+git checkout -b feature/AmazingFeature
+
+Commit your changes
+git commit -m 'Add AmazingFeature'
+
+Push the branch
+git push origin feature/AmazingFeature
+
+Open a Pull Request
+```
+📄 License
+Distributed under the MIT License. See LICENSE for details.
