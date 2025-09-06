@@ -26,6 +26,13 @@ cipher = Fernet(FERNET_KEY)
 # Target & Session Endpoints
 # ---------------------------
 
+
+
+def dashboard_view(request, session_id):
+    session = get_object_or_404(ScanSession, id=session_id)
+    return render(request, "dashboard.html", {"session_id": session.id})
+
+
 @api_view(["POST"])
 def add_target(request):
     """Add a new target"""
