@@ -14,7 +14,8 @@ from core.models import Target, ScanSession, ScanTask, Subdomain, Port
 from core.tasks import (
     run_nmap_scan, gobuster_scan, amass_scan,
     httpx_scan, passive_whois_scan, passive_dns_scan,
-    passive_cert_scan, shodan_scan
+    passive_cert_scan, shodan_scan,
+    run_active_recon, run_passive_recon, run_complete_scan
 )
 
 # Encryption key
@@ -199,3 +200,20 @@ def generate_report(request, session_id, format="json"):
 
     else:
         return Response({"error": "Invalid report format"}, status=400)
+
+
+@api_view(["POST"])
+def start_recon(request, session_id):
+    scan_type = request.data.get("scan_type")
+    api_key = request.data.get("api_key", None)
+
+    if scan_type == "active":
+        run_active_recon.delay(session_id)
+    elif scan_type == "passive":
+        run_passive_recon.delay(session_id, api_key)
+    elif scan_type == "complete":
+        run_complete_scan.delay(session_id, api_key)
+    else:
+        return Response({"error": "Invalid scan type"}, status=400)
+
+    return Response({"message": f"{scan_type.capitalize()} recon started."})
