@@ -1,7 +1,5 @@
-
 import os
 import json
-from cryptography.fernet import Fernet
 
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -18,9 +16,9 @@ from core.tasks import (
     run_active_recon, run_passive_recon, run_complete_scan
 )
 
-# Encryption key
-FERNET_KEY = os.getenv("SCAN_ENCRYPTION_KEY")
-cipher = Fernet(FERNET_KEY)
+# # Encryption key
+# FERNET_KEY = os.getenv("SCAN_ENCRYPTION_KEY")
+# cipher = Fernet(FERNET_KEY)
 
 
 # ---------------------------
@@ -29,9 +27,10 @@ cipher = Fernet(FERNET_KEY)
 
 
 
-def dashboard_view(request, session_id):
-    session = get_object_or_404(ScanSession, id=session_id)
-    return render(request, "dashboard.html", {"session_id": session.id})
+from django.shortcuts import render
+
+def dashboard_view(request):
+    return render(request, "dashboard.html")
 
 
 @api_view(["POST"])
@@ -96,7 +95,7 @@ def start_scan(request, session_id):
 
 @api_view(["GET"])
 def get_scan_results(request, session_id):
-    """Get decrypted scan results for a session"""
+    """Get scan results for a session (no decryption for now)"""
     try:
         session = ScanSession.objects.get(id=session_id)
     except ScanSession.DoesNotExist:
@@ -104,10 +103,8 @@ def get_scan_results(request, session_id):
 
     scans = []
     for task in session.tasks.all():
-        try:
-            decrypted_result = cipher.decrypt(task.result.encode()).decode()
-        except Exception:
-            decrypted_result = "Error decrypting result."
+        # Just return the raw result for now
+        decrypted_result = task.result
 
         scans.append({
             "id": task.id,
@@ -152,10 +149,8 @@ def generate_report(request, session_id, format="json"):
     # Collect data
     scans = []
     for task in session.tasks.all():
-        try:
-            decrypted_result = cipher.decrypt(task.result.encode()).decode()
-        except Exception:
-            decrypted_result = "Error decrypting result."
+        # Just return the raw result for now
+        decrypted_result = task.result
         scans.append({
             "scan_type": task.scan_type,
             "status": task.status,
@@ -217,3 +212,8 @@ def start_recon(request, session_id):
         return Response({"error": "Invalid scan type"}, status=400)
 
     return Response({"message": f"{scan_type.capitalize()} recon started."})
+
+
+def home_view(request):
+    """Render the home page."""
+    return render(request, "home.html")

@@ -349,7 +349,7 @@ import shodan
 
 from celery import shared_task
 from cryptography.fernet import Fernet
-from core.models import Target, ScanSession, ScanTask, Subdomain, Port, ScanArtifact
+from core.models import Target, ScanSession, ScanTask, Subdomain, Port
 
 # Load encryption key (generate/store in env or .env file)
 FERNET_KEY = os.getenv("SCAN_ENCRYPTION_KEY", Fernet.generate_key())
