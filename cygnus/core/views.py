@@ -1,8 +1,6 @@
-import os
-import json
+
 
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,8 +10,8 @@ from core.models import Target, ScanSession, ScanTask, Subdomain, Port
 from core.tasks import (
     run_nmap_scan, gobuster_scan, amass_scan,
     httpx_scan, passive_whois_scan, passive_dns_scan,
-    passive_cert_scan, shodan_scan,
-    run_active_recon, run_passive_recon, run_complete_scan
+    passive_cert_scan, shodan_scan, 
+    run_complete_scan, run_active_recon, run_passive_recon
 )
 
 # # Encryption key

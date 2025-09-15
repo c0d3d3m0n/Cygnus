@@ -347,13 +347,13 @@ import dns.resolver
 import requests
 import shodan
 
-from celery import shared_task
+from celery import shared_task, chain, group, chord
 from cryptography.fernet import Fernet
 from core.models import Target, ScanSession, ScanTask, Subdomain, Port
 
-# Load encryption key (generate/store in env or .env file)
-FERNET_KEY = os.getenv("SCAN_ENCRYPTION_KEY", Fernet.generate_key())
-cipher = Fernet(FERNET_KEY)
+# # Load encryption key (generate/store in env or .env file)
+# FERNET_KEY = os.getenv("SCAN_ENCRYPTION_KEY", Fernet.generate_key())
+# cipher = Fernet(FERNET_KEY)
 
 
 # ---------------------------
@@ -384,12 +384,13 @@ def get_temp_path(filename):
 
 def save_scan(session, scan_type, command, result, status="success"):
     """Encrypt result and save a ScanTask."""
-    encrypted = cipher.encrypt(result.encode()).decode()
+    # encrypted = cipher.encrypt(result.encode()).decode()
     return ScanTask.objects.create(
         session=session,
         scan_type=scan_type,
         command=command,
-        result=encrypted,
+        # result=cipher,
+        result=result,
         status=status
     )
 
@@ -425,7 +426,7 @@ def run_nmap_scan(session_id):
             )
 
     save_scan(session, "nmap", " ".join(command), output, "success")
-    return f"Nmap scan completed for {target.domain}."
+    return f"Nmap scan completed for {session.target.domain}."
 
 
 @shared_task
@@ -600,41 +601,113 @@ def shodan_scan(session_id, api_key):
     return f"Shodan scan completed for {target.domain}."
 
 
-from celery import chain
+#---------------------------
+#Active Recon Orchestration
+#---------------------------
 
 @shared_task
 def run_active_recon(session_id):
-    """Run all active recon scans in sequence"""
-    job = chain(
-        run_nmap_scan.s(session_id),
-        gobuster_scan.s(session_id),
-        amass_scan.s(session_id),
-        httpx_scan.s(session_id)
+    """
+    Orchestrates all active reconnaissance scans efficiently.
+    Runs independent scans in parallel, then dependent scans in sequence.
+    """
+    # Group of independent active scans that can run in parallel.
+    independent_scans = group(
+        run_nmap_scan.si(session_id),
+        gobuster_scan.si(session_id)
     )
-    job.apply_async()
-    return f"Active recon started for session {session_id}"
 
+    # Chain of dependent active scans that must run in sequence.
+    dependent_scans = chain(
+        amass_scan.si(session_id),
+        httpx_scan.si(session_id)
+    )
+
+    # Final workflow: run the parallel group, then run the dependent chain.
+    workflow = chain(independent_scans, dependent_scans)
+    
+    # Start the entire active scan workflow.
+    workflow.apply_async()
+
+    return f"Active reconnaissance started for session {session_id}."
+
+#---------------------------
+#Passive Recon Orchestration
+#---------------------------
 
 @shared_task
 def run_passive_recon(session_id, shodan_api_key=None):
-    """Run all passive recon scans"""
-    job = chain(
+    """
+    Orchestrates all passive reconnaissance scans to run in parallel.
+    """
+    # Create a list of all passive scan signatures.
+    passive_tasks = [
         passive_whois_scan.s(session_id),
         passive_dns_scan.s(session_id),
-        passive_cert_scan.s(session_id)
-    )
-    if shodan_api_key:
-        job |= shodan_scan.s(session_id, shodan_api_key)
-    job.apply_async()
-    return f"Passive recon started for session {session_id}"
+        passive_cert_scan.s(session_id),
+    ]
 
+    # Conditionally add the Shodan scan if an API key is provided.
+    if shodan_api_key:
+        passive_tasks.append(shodan_scan.s(session_id, shodan_api_key))
+
+    # Create a group to run all tasks in parallel.
+    job = group(passive_tasks)
+    
+    # Start the group of tasks.
+    job.apply_async()
+
+    return f"Passive reconnaissance started for session {session_id}."
+# Make sure all your other scan tasks are defined in this file
+
+#---------------------------
+# Orchestrated Full Scan
+#---------------------------
 
 @shared_task
 def run_complete_scan(session_id, shodan_api_key=None):
-    """Run active + passive recon together"""
-    job = chain(
-        run_active_recon.s(session_id),
-        run_passive_recon.s(session_id, shodan_api_key)
+    """
+    Orchestrates a full reconnaissance scan using parallel and sequential execution.
+    """
+    
+    # Define the group of all independent tasks that can run in parallel.
+    # This includes all passive scans and the initial active scans.
+    parallel_tasks = group(
+        # Passive scans
+        passive_whois_scan.si(session_id),
+        passive_dns_scan.si(session_id),
+        passive_cert_scan.si(session_id),
+        
+        # Independent active scans
+        run_nmap_scan.si(session_id),
+        gobuster_scan.si(session_id),
     )
-    job.apply_async()
-    return f"Complete scan started for session {session_id}"
+    
+    # Add the Shodan scan to the parallel group only if an API key is provided.
+    if shodan_api_key:
+        parallel_tasks.tasks.append(shodan_scan.si(session_id, shodan_api_key))
+
+    # Define the chain of dependent tasks that MUST run in sequence.
+    # amass creates a file that httpx needs.
+    dependent_chain = chain(
+        amass_scan.si(session_id),
+        httpx_scan.si(session_id)
+    )
+
+    # Create the final workflow:
+    # 1. Run all the parallel_tasks together.
+    # 2. Once ALL of them are complete, run the dependent_chain.
+    workflow = chain(parallel_tasks, dependent_chain)
+    
+    # Start the entire orchestrated workflow.
+    workflow.apply_async()
+
+    return f"Complete orchestrated scan started for session {session_id}."
+
+# Optional: A final task that could be added to the end of the chain
+@shared_task
+def generate_final_report(session_id):
+    # Logic to compile results and generate a report or send a notification
+    print(f"All scans completed for session {session_id}. Generating report.")
+    # You could add this to the workflow like so:
+    # workflow = chain(parallel_tasks, dependent_chain, generate_final_report.s(session_id))
