@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-&&y$s&1-fjp644u9k+x!js824$%um)le%0i7g#hj+i3#wvj%i7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['cygnus-wya7.onrender.com', 'localhost']
+ALLOWED_HOSTS = ['cygnus-g3iz.onrender.com', 'localhost']
 
 
 # Application definition
